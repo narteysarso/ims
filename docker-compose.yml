@@ -1,0 +1,47 @@
+version: "3"
+
+services:
+    mysql_server:
+        image: mysql:5.7
+        env_file:
+            - ./backend/mysql.env
+        ports: 
+            - 3306:3306
+        volumes:
+            - ./backend/storage/mysql:/var/lib/mysql
+        
+    phpAdmin:
+        depends_on: 
+            - mysql_server
+        image: phpmyadmin/phpmyadmin
+        ports: 
+            - 8081:80
+        env_file: 
+            - ./backend/phpadmin.env
+
+    backend:
+        build: ./backend/invoice
+        volumes:
+            - ./backend/invoice:/var/www
+            - ./backend/storage/app:/var/www/storage/app
+            - ./backend/storage/logs:/var/www/storage/logs
+
+    nginx:
+        depends_on: 
+            - backend
+            - frontend
+        ports:
+            - 3050:80
+        build: 
+            context: ./nginx
+            dockerfile: Dockerfile.dev
+
+    frontend:
+        tty: true
+        build:
+            context: ./client
+            dockerfile: Dockerfile.dev
+        volumes: 
+            - /app/node_modules
+            - ./client/build:/app/build
+            - ./client/src:/app/src
